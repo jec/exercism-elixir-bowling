@@ -23,6 +23,12 @@ defmodule RegularFrame do
     open: [:spare, :closed]
   }
 
+  @doc """
+    Validates the value of `pin_count`, appends it to the frame's rolls and
+    calls next_frame/1 to return either the same frame (if incomplete) or a
+    new, subsequent frame
+  """
+
   @spec roll(t(), non_neg_integer) :: Frame.t() | Frame.error()
   def roll(%RegularFrame{state: :pending}, pin_count) when pin_count > 10 do
     {:error, "Pin count exceeds pins on the lane"}
@@ -34,13 +40,29 @@ defmodule RegularFrame do
     next_frame(%{frame | data: %{data | rolls: Tuple.append(data.rolls, pin_count)}})
   end
 
-  def score(frame = %RegularFrame{data: %{previous: last_frame}}, next_two_rolls \\ []) do
-    if last_frame == nil do
-      points(frame, next_two_rolls)
-    else
-      points(frame, next_two_rolls) + score(last_frame, two_rolls(frame, next_two_rolls))
-    end
+  @doc """
+    Returns the score from this frame plus the previous frame's score
+
+    Note that if the previous frame exists, then its score is the cumulative
+    score for it plus its predecessors.
+
+    The `next_two_rolls` argument allows the frame's subsequent frame to
+    provide up to two rolls that may be counted toward this frame's total, as
+    appropriate.
+  """
+
+  @spec score(t(), [non_neg_integer]) :: non_neg_integer
+  def score(frame, next_two_rolls \\ [])
+  def score(frame = %RegularFrame{data: %{previous: nil}}, next_two_rolls) do
+    points(frame, next_two_rolls)
   end
+  def score(frame = %RegularFrame{data: %{previous: last_frame}}, next_two_rolls) do
+    points(frame, next_two_rolls) + score(last_frame, two_rolls(frame, next_two_rolls))
+  end
+
+  # Applies the appropriate state transition to a `frame` and then returns
+  # either the same frame (if incomplete) or a new, subsequent frame.
+  @spec next_frame(t()) :: Frame.t()
 
   # pending -> strike; advances to a new frame
   defp next_frame(frame = %RegularFrame{state: :pending, data: %{rolls: {10}}}) do
@@ -66,17 +88,28 @@ defmodule RegularFrame do
     Frame.create(new_frame)
   end
 
+  # Receives a `RegularFrame` and up to two rolls from subsequent frames and
+  # calculates the score for this frame
+  @spec points(t(), [non_neg_integer]) :: non_neg_integer
+
+  # A strike scores this frame plus the next two rolls.
   defp points(%RegularFrame{state: :strike}, next_two_rolls) do
     10 + Enum.sum(next_two_rolls)
   end
+
+  # A spare scores this frame plus the next roll.
   defp points(%RegularFrame{state: :spare, data: %{rolls: {x, y}}}, [head | _]) do
     x + y + head
   end
+
+  # A non-strike, non-spare scores this frame only.
   defp points(%RegularFrame{state: :closed, data: %{rolls: {x, y}}}, _) do
     x + y
   end
 
-  # Returns two rolls from the frame and, if necessary, from the next frame
+  # Returns two rolls from the frame and, if necessary, from the next frame(s)
+  @spec two_rolls(t(), [non_neg_integer]) :: [non_neg_integer]
+
   defp two_rolls(%RegularFrame{state: :strike}, [head | _]) do
     [10, head]
   end
