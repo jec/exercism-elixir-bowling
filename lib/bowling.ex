@@ -4,8 +4,11 @@ defmodule Bowling do
     the game
   """
 
+  defstruct [:frame]
+
   @spec start() :: any
   def start do
+    %Bowling{frame: Frame.create()}
   end
 
   @doc """
@@ -15,7 +18,8 @@ defmodule Bowling do
   """
 
   @spec roll(any, integer) :: any | String.t()
-  def roll(game, roll) do
+  def roll(%Bowling{frame: frame}, pin_count) do
+    %Bowling{frame: Frame.roll(frame, pin_count)}
   end
 
   @doc """
@@ -24,6 +28,7 @@ defmodule Bowling do
   """
 
   @spec score(any) :: integer | String.t()
-  def score(game) do
+  def score(%Bowling{frame: frame}) do
+    Frame.score(frame)
   end
 end
