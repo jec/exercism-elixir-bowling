@@ -36,7 +36,7 @@ defmodule Frame do
     appropriate module
   """
 
-  @spec roll(t(), non_neg_integer) :: t()
+  @spec roll(t(), non_neg_integer) :: t() | error()
   def roll(_, pin_count) when pin_count < 0 do
     {:error, "Negative roll is invalid"}
   end

@@ -4,8 +4,6 @@ defmodule Bowling do
     the game
   """
 
-  defstruct [:frame]
-
   @spec start() :: any
   def start do
     Frame.create()
