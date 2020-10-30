@@ -4,7 +4,7 @@ defmodule Bowling do
     the game
   """
 
-  @spec start() :: any
+  @spec start() :: Frame.t()
   def start do
     Frame.create()
   end
@@ -15,7 +15,7 @@ defmodule Bowling do
     case it returns a helpful message.
   """
 
-  @spec roll(any, integer) :: any | String.t()
+  @spec roll(Frame.t(), non_neg_integer) :: Frame.t() | Frame.error()
   def roll(frame, pin_count) do
     Frame.roll(frame, pin_count)
   end
@@ -25,7 +25,7 @@ defmodule Bowling do
     If the game isn't complete, it returns a helpful message.
   """
 
-  @spec score(any) :: integer | String.t()
+  @spec score(Frame.t()) :: non_neg_integer | Frame.error()
   def score(frame) do
     Frame.score(frame)
   end
