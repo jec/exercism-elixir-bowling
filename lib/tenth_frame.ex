@@ -27,6 +27,11 @@ defmodule TenthFrame do
     roll_three_with_bonus: [:closed]
   }
 
+  @doc """
+    Validates the value of `pin_count`, appends it to the frame's rolls and
+    calls next_state/1 to transition the state of the frame and return it
+  """
+
   @spec roll(t(), non_neg_integer) :: t() | Frame.error()
   def roll(%TenthFrame{state: :pending}, pin_count) when pin_count > 10 do
     {:error, "Pin count exceeds pins on the lane"}
@@ -47,8 +52,17 @@ defmodule TenthFrame do
     {:error, "Cannot roll after game is over"}
   end
   def roll(frame = %TenthFrame{data: data}, pin_count) do
-    next_frame(%{frame | data: %{data | rolls: Tuple.append(data.rolls, pin_count)}})
+    next_state(%{frame | data: %{data | rolls: Tuple.append(data.rolls, pin_count)}})
   end
+
+  @doc """
+    Returns the score from the frame plus the previous frame's score
+
+    Note that the previous frame's score is the cumulative score for it plus
+    its predecessors.
+
+    If the frame isn't completed, it returns an error message.
+  """
 
   @spec score(t()) :: non_neg_integer | Frame.error()
   def score(%TenthFrame{state: :closed, data: %{rolls: rolls, previous: previous_frame}}) do
@@ -59,55 +73,55 @@ defmodule TenthFrame do
     {:error, "Score cannot be taken until the end of the game"}
   end
 
-  # next_frame/1 determines the state transitions and whether the game advances
-  # to a new frame.
+  # Determines the state transitions and returns the transitioned frame
+  @spec next_state(t()) :: t()
 
   # pending -> roll_two_with_strike
-  defp next_frame(frame = %TenthFrame{state: :pending, data: %{rolls: {10}}}) do
-    {:ok, new_frame} = Fsmx.transition(frame, :roll_two_with_strike)
-    new_frame
+  defp next_state(frame = %TenthFrame{state: :pending, data: %{rolls: {10}}}) do
+    {:ok, updated_frame} = Fsmx.transition(frame, :roll_two_with_strike)
+    updated_frame
   end
 
   # pending -> roll_two
-  defp next_frame(frame = %TenthFrame{state: :pending}) do
-    {:ok, new_frame} = Fsmx.transition(frame, :roll_two)
-    new_frame
+  defp next_state(frame = %TenthFrame{state: :pending}) do
+    {:ok, updated_frame} = Fsmx.transition(frame, :roll_two)
+    updated_frame
   end
 
   # roll_two -> roll_three_with_bonus
-  defp next_frame(frame = %TenthFrame{state: :roll_two, data: %{rolls: {x, y}}}) when x + y == 10 do
-    {:ok, new_frame} = Fsmx.transition(frame, :roll_three_with_bonus)
-    new_frame
+  defp next_state(frame = %TenthFrame{state: :roll_two, data: %{rolls: {x, y}}}) when x + y == 10 do
+    {:ok, updated_frame} = Fsmx.transition(frame, :roll_three_with_bonus)
+    updated_frame
   end
 
   # roll_two -> closed
-  defp next_frame(frame = %TenthFrame{state: :roll_two}) do
-    {:ok, new_frame} = Fsmx.transition(frame, :closed)
-    new_frame
+  defp next_state(frame = %TenthFrame{state: :roll_two}) do
+    {:ok, updated_frame} = Fsmx.transition(frame, :closed)
+    updated_frame
   end
 
   # roll_two_with_strike -> roll_three_with_bonus
-  defp next_frame(frame = %TenthFrame{state: :roll_two_with_strike, data: %{rolls: {10, 10}}}) do
-    {:ok, new_frame} = Fsmx.transition(frame, :roll_three_with_bonus)
-    new_frame
+  defp next_state(frame = %TenthFrame{state: :roll_two_with_strike, data: %{rolls: {10, 10}}}) do
+    {:ok, updated_frame} = Fsmx.transition(frame, :roll_three_with_bonus)
+    updated_frame
   end
 
   # roll_two_with_strike -> roll_three
-  defp next_frame(frame = %TenthFrame{state: :roll_two_with_strike}) do
-    {:ok, new_frame} = Fsmx.transition(frame, :roll_three)
-    new_frame
+  defp next_state(frame = %TenthFrame{state: :roll_two_with_strike}) do
+    {:ok, updated_frame} = Fsmx.transition(frame, :roll_three)
+    updated_frame
   end
 
   # roll_three -> closed
-  defp next_frame(frame = %TenthFrame{state: :roll_three}) do
-    {:ok, new_frame} = Fsmx.transition(frame, :closed)
-    new_frame
+  defp next_state(frame = %TenthFrame{state: :roll_three}) do
+    {:ok, updated_frame} = Fsmx.transition(frame, :closed)
+    updated_frame
   end
 
   # roll_three_with_bonus -> closed
-  defp next_frame(frame = %TenthFrame{state: :roll_three_with_bonus}) do
-    {:ok, new_frame} = Fsmx.transition(frame, :closed)
-    new_frame
+  defp next_state(frame = %TenthFrame{state: :roll_three_with_bonus}) do
+    {:ok, updated_frame} = Fsmx.transition(frame, :closed)
+    updated_frame
   end
 end
 

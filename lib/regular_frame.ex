@@ -25,7 +25,7 @@ defmodule RegularFrame do
 
   @doc """
     Validates the value of `pin_count`, appends it to the frame's rolls and
-    calls next_frame/1 to return either the same frame (if incomplete) or a
+    calls next_state_and_frame/1 to return either the transitioned frame (if incomplete) or a
     new, subsequent frame
   """
 
@@ -37,7 +37,7 @@ defmodule RegularFrame do
     {:error, "Pin count exceeds pins on the lane"}
   end
   def roll(frame = %RegularFrame{data: data}, pin_count) do
-    next_frame(%{frame | data: %{data | rolls: Tuple.append(data.rolls, pin_count)}})
+    next_state_and_frame(%{frame | data: %{data | rolls: Tuple.append(data.rolls, pin_count)}})
   end
 
   @doc """
@@ -60,32 +60,32 @@ defmodule RegularFrame do
     points(frame, next_two_rolls) + score(last_frame, two_rolls(frame, next_two_rolls))
   end
 
-  # Applies the appropriate state transition to a `frame` and then returns
-  # either the same frame (if incomplete) or a new, subsequent frame.
-  @spec next_frame(t()) :: Frame.t()
+  # Applies the appropriate state transition to a frame, possibly advances to a
+  # new, subsequent frame and returns the resulting frame
+  @spec next_state_and_frame(t()) :: Frame.t()
 
   # pending -> strike; advances to a new frame
-  defp next_frame(frame = %RegularFrame{state: :pending, data: %{rolls: {10}}}) do
-    {:ok, new_frame} = Fsmx.transition(frame, :strike)
-    Frame.create(new_frame)
+  defp next_state_and_frame(frame = %RegularFrame{state: :pending, data: %{rolls: {10}}}) do
+    {:ok, updated_frame} = Fsmx.transition(frame, :strike)
+    Frame.create(updated_frame)
   end
 
   # pending -> open; returns current frame
-  defp next_frame(frame = %RegularFrame{state: :pending}) do
-    {:ok, new_frame} = Fsmx.transition(frame, :open)
-    new_frame
+  defp next_state_and_frame(frame = %RegularFrame{state: :pending}) do
+    {:ok, updated_frame} = Fsmx.transition(frame, :open)
+    updated_frame
   end
 
   # open -> spare; advances to a new frame
-  defp next_frame(frame = %RegularFrame{state: :open, data: %{rolls: {x, y}}}) when x + y == 10 do
-    {:ok, new_frame} = Fsmx.transition(frame, :spare)
-    Frame.create(new_frame)
+  defp next_state_and_frame(frame = %RegularFrame{state: :open, data: %{rolls: {x, y}}}) when x + y == 10 do
+    {:ok, updated_frame} = Fsmx.transition(frame, :spare)
+    Frame.create(updated_frame)
   end
 
   # open -> closed; advances to a new frame
-  defp next_frame(frame = %RegularFrame{state: :open}) do
-    {:ok, new_frame} = Fsmx.transition(frame, :closed)
-    Frame.create(new_frame)
+  defp next_state_and_frame(frame = %RegularFrame{state: :open}) do
+    {:ok, updated_frame} = Fsmx.transition(frame, :closed)
+    Frame.create(updated_frame)
   end
 
   # Receives a `RegularFrame` and up to two rolls from subsequent frames and
@@ -108,6 +108,9 @@ defmodule RegularFrame do
   end
 
   # Returns two rolls from the frame and, if necessary, from the next frame(s)
+  #
+  # These are not used to score the current frame but are used for calculating
+  # the points on the previous frame, if any.
   @spec two_rolls(t(), [non_neg_integer]) :: [non_neg_integer]
 
   defp two_rolls(%RegularFrame{state: :strike}, [head | _]) do
