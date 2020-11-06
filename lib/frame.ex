@@ -7,6 +7,8 @@ defmodule Frame do
 
   @type error :: {:error, String.t()}
 
+  @next_to_last_frame_number 9
+
   @doc """
     Creates the first `RegularFrame` to begin a game
   """
@@ -24,8 +26,8 @@ defmodule Frame do
   """
 
   @spec create(t()) :: t()
-  def create(previous = %RegularFrame{data: %{number: 9}}) do
-    %TenthFrame{state: :pending, data: %{number: 10, previous: previous, rolls: {}}}
+  def create(previous = %RegularFrame{data: %{number: @next_to_last_frame_number}}) do
+    %TenthFrame{state: :pending, data: %{previous: previous, rolls: {}}}
   end
   def create(previous = %RegularFrame{data: %{number: frame_num}}) do
     %RegularFrame{state: :pending, data: %{number: frame_num + 1, previous: previous, rolls: {}}}

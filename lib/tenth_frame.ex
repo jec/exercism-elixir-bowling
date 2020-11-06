@@ -13,11 +13,13 @@ defmodule TenthFrame do
 
   defstruct [:data, state: :pending]
 
-  @type t :: %TenthFrame{state: state(), data: %{number: 10, rolls: rolls(), previous: t()}}
+  @type t :: %TenthFrame{state: state(), data: %{rolls: rolls(), previous: t()}}
 
   @type state :: :pending | :roll_two | :roll_two_with_strike | :roll_three | :roll_three_with_bonus | :closed
 
   @type rolls :: {} | {non_neg_integer} | {non_neg_integer, non_neg_integer} | {non_neg_integer, non_neg_integer, non_neg_integer}
+
+  @strike_count 10
 
   use Fsmx.Struct, transitions: %{
     pending: [:roll_two, :roll_two_with_strike],
@@ -33,19 +35,19 @@ defmodule TenthFrame do
   """
 
   @spec roll(t(), non_neg_integer) :: t() | Frame.error()
-  def roll(%TenthFrame{state: :pending}, pin_count) when pin_count > 10 do
+  def roll(%TenthFrame{state: :pending}, pin_count) when pin_count > @strike_count do
     {:error, "Pin count exceeds pins on the lane"}
   end
-  def roll(%TenthFrame{state: :roll_two, data: %{rolls: {x}}}, pin_count) when pin_count > 10 - x do
+  def roll(%TenthFrame{state: :roll_two, data: %{rolls: {x}}}, pin_count) when pin_count > @strike_count - x do
     {:error, "Pin count exceeds pins on the lane"}
   end
-  def roll(%TenthFrame{state: :roll_two_with_strike}, pin_count) when pin_count > 10 do
+  def roll(%TenthFrame{state: :roll_two_with_strike}, pin_count) when pin_count > @strike_count do
     {:error, "Pin count exceeds pins on the lane"}
   end
-  def roll(%TenthFrame{state: :roll_three, data: %{rolls: {_x, y}}}, pin_count) when pin_count > 10 - y do
+  def roll(%TenthFrame{state: :roll_three, data: %{rolls: {_x, y}}}, pin_count) when pin_count > @strike_count - y do
     {:error, "Pin count exceeds pins on the lane"}
   end
-  def roll(%TenthFrame{state: :roll_three_with_bonus}, pin_count) when pin_count > 10 do
+  def roll(%TenthFrame{state: :roll_three_with_bonus}, pin_count) when pin_count > @strike_count do
     {:error, "Pin count exceeds pins on the lane"}
   end
   def roll(%TenthFrame{state: :closed}, _pin_count) do
@@ -77,7 +79,7 @@ defmodule TenthFrame do
   @spec next_state(t()) :: t()
 
   # pending -> roll_two_with_strike
-  defp next_state(frame = %TenthFrame{state: :pending, data: %{rolls: {10}}}) do
+  defp next_state(frame = %TenthFrame{state: :pending, data: %{rolls: {@strike_count}}}) do
     {:ok, updated_frame} = Fsmx.transition(frame, :roll_two_with_strike)
     updated_frame
   end
@@ -89,7 +91,7 @@ defmodule TenthFrame do
   end
 
   # roll_two -> roll_three_with_bonus
-  defp next_state(frame = %TenthFrame{state: :roll_two, data: %{rolls: {x, y}}}) when x + y == 10 do
+  defp next_state(frame = %TenthFrame{state: :roll_two, data: %{rolls: {x, y}}}) when x + y == @strike_count do
     {:ok, updated_frame} = Fsmx.transition(frame, :roll_three_with_bonus)
     updated_frame
   end
@@ -101,7 +103,7 @@ defmodule TenthFrame do
   end
 
   # roll_two_with_strike -> roll_three_with_bonus
-  defp next_state(frame = %TenthFrame{state: :roll_two_with_strike, data: %{rolls: {10, 10}}}) do
+  defp next_state(frame = %TenthFrame{state: :roll_two_with_strike, data: %{rolls: {@strike_count, @strike_count}}}) do
     {:ok, updated_frame} = Fsmx.transition(frame, :roll_three_with_bonus)
     updated_frame
   end
@@ -129,6 +131,6 @@ defimpl Inspect, for: TenthFrame do
   import Inspect.Algebra
 
   def inspect(%TenthFrame{state: state, data: data}, opts) do
-    concat(["#TenthFrame<n=", to_doc(data.number, opts), " ", to_doc(state, opts), " ", to_doc(data.rolls, opts), ">"])
+    concat(["#TenthFrame<n=10 ", to_doc(state, opts), " ", to_doc(data.rolls, opts), ">"])
   end
 end

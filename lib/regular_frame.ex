@@ -10,13 +10,15 @@ defmodule RegularFrame do
     * closed -- a completed frame with two rolls that wasn't a spare
   """
 
+  defstruct [:data, state: :pending]
+
   @type t :: %RegularFrame{state: state(), data: %{number: pos_integer, rolls: rolls(), previous: t() | nil}}
 
   @type state :: :pending | :open | :strike | :spare | :closed
 
   @type rolls :: {} | {non_neg_integer} | {non_neg_integer, non_neg_integer}
 
-  defstruct [:data, state: :pending]
+  @strike_count 10
 
   use Fsmx.Struct, transitions: %{
     pending: [:open, :strike],
@@ -30,10 +32,10 @@ defmodule RegularFrame do
   """
 
   @spec roll(t(), non_neg_integer) :: Frame.t() | Frame.error()
-  def roll(%RegularFrame{state: :pending}, pin_count) when pin_count > 10 do
+  def roll(%RegularFrame{state: :pending}, pin_count) when pin_count > @strike_count do
     {:error, "Pin count exceeds pins on the lane"}
   end
-  def roll(%RegularFrame{state: :open, data: %{rolls: {x}}}, pin_count) when pin_count > 10 - x do
+  def roll(%RegularFrame{state: :open, data: %{rolls: {x}}}, pin_count) when pin_count > @strike_count - x do
     {:error, "Pin count exceeds pins on the lane"}
   end
   def roll(frame = %RegularFrame{data: data}, pin_count) do
@@ -65,7 +67,7 @@ defmodule RegularFrame do
   @spec next_state_and_frame(t()) :: Frame.t()
 
   # pending -> strike; advances to a new frame
-  defp next_state_and_frame(frame = %RegularFrame{state: :pending, data: %{rolls: {10}}}) do
+  defp next_state_and_frame(frame = %RegularFrame{state: :pending, data: %{rolls: {@strike_count}}}) do
     {:ok, updated_frame} = Fsmx.transition(frame, :strike)
     Frame.create(updated_frame)
   end
@@ -77,7 +79,7 @@ defmodule RegularFrame do
   end
 
   # open -> spare; advances to a new frame
-  defp next_state_and_frame(frame = %RegularFrame{state: :open, data: %{rolls: {x, y}}}) when x + y == 10 do
+  defp next_state_and_frame(frame = %RegularFrame{state: :open, data: %{rolls: {x, y}}}) when x + y == @strike_count do
     {:ok, updated_frame} = Fsmx.transition(frame, :spare)
     Frame.create(updated_frame)
   end
@@ -94,7 +96,7 @@ defmodule RegularFrame do
 
   # A strike scores this frame plus the next two rolls.
   defp points(%RegularFrame{state: :strike}, next_two_rolls) do
-    10 + Enum.sum(next_two_rolls)
+    @strike_count + Enum.sum(next_two_rolls)
   end
 
   # A spare scores this frame plus the next roll.
@@ -114,7 +116,7 @@ defmodule RegularFrame do
   @spec two_rolls(t(), [non_neg_integer]) :: [non_neg_integer]
 
   defp two_rolls(%RegularFrame{state: :strike}, [head | _]) do
-    [10, head]
+    [@strike_count, head]
   end
   defp two_rolls(%RegularFrame{state: :spare, data: %{rolls: {x, y}}}, _) do
     [x, y]
