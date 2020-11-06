@@ -7,10 +7,18 @@
       <sourceFolder url="file://$MODULE_DIR$/lib" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/spec" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/bunt" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/credo" />
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/dialyxir" />
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/erlex" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/file_system" />
       <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/fsmx" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/dev/lib/jason" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/bunt" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/credo" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/file_system" />
       <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/fsmx" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/test/lib/jason" />
       <excludeFolder url="file://$MODULE_DIR$/assets/node_modules/phoenix" />
       <excludeFolder url="file://$MODULE_DIR$/assets/node_modules/phoenix_html" />
       <excludeFolder url="file://$MODULE_DIR$/cover" />
@@ -28,5 +36,9 @@
     <orderEntry type="library" name="erlex" level="project" />
     <orderEntry type="library" name="credo" level="project" />
     <orderEntry type="library" name="excoveralls" level="project" />
+    <orderEntry type="library" name="file_system" level="project" />
+    <orderEntry type="library" name="bunt" level="project" />
+    <orderEntry type="library" name="jason" level="project" />
+    <orderEntry type="library" name="inch_ex" level="project" />
   </component>
 </module>
