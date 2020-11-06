@@ -1,5 +1,5 @@
 defmodule Bowling do
-  @doc """
+  @moduledoc """
     Creates a new game of bowling that can be used to store the results of
     the game
   """
